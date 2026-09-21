@@ -162,7 +162,7 @@ namespace analysis {
 	void write2file(Bin1D *bin1, int ctr = 0);
 	void write2file(Bin1D *binA, Bin1D *binB, int ctr = 0, float timeToAvg = 0.0);
 	void write2file(Bin1D **Pin, Bin1D **Pkin, Bin1D *Pswim, int ctr = 0);
-	void write2file(float **MSD, int *count, int *delFrames, int nSample);
+	void write2file(double **MSD, long *count, int *delFrames, int nSample);
 	void write2file(float time, float order, int step = -1);
 	void write2file(float *rn, float **RDF, int nRDF, int nBins);
 	void write2file(float ***RDF_x_y, int nRDF, int nBins[], float binW[], char option[]);

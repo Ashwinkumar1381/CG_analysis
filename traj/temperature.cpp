@@ -12,20 +12,20 @@ float computeThermalTemperature(atom_style *ATOMS, System *BOX);
 int main(int argc, char *argv[])
 {
 	char *option = new char[20];
-	sprintf(option, "time_evolve_traj");
+	sprintf(option, "get_velocity_frame");
 
 	/* -------- System Params -------- */
 	float Lx = 150.0, Ly = 30.0;
 	int nAtomTypes = 2;
 
 	/* -------- Trajectory Params -------- */
-	float dt = 5e-4;
-	int frameW = int(1e5);
-	int frameStart = int(3e4), frameEnd = int(5e4);
+	float dt = 1e-5;
+	int frameW = int(5e4);
+	int frameStart = int(1468), frameEnd = int(5e4);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_1e0/traj2.cfg");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_1e0/");
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_1e0/Pe5/dt_1e-5/traj.cfg");
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_1e0/Pe5/dt_1e-5/");
 
 	TRAJ -> openTrajectory();
 

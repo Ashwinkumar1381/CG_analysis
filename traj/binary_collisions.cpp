@@ -8,16 +8,16 @@ int main(int argc, char *argv[])
 	float Lx = 100.0, Ly = 100.0;
 	int nAtomTypes = 2;
 
-	int frameStart = int(0), frameEnd = int(5e3);
+	int frameStart = int(0), frameEnd = int(1e4);
 	float dt = 5e-4;
-	int frameW = int(10);
+	int frameW = int(1);
 
 	int run_nr = 0;
 	sscanf(argv[1], "%d", &run_nr);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//run/media/ethaya_lab_c1/ASH_DRIVE_3/ashwin_md/binary_collisions/tests/traj.cfg");
-	sprintf(TRAJ->fpathO, "//run/media/ethaya_lab_c1/ASH_DRIVE_3/ashwin_md/binary_collisions/tests/collision_stats.dat");
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/binary_collisions/tests/traj.cfg");
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/binary_collisions/tests/collision_stats.dat");
 
 	TRAJ -> openTrajectory();
 

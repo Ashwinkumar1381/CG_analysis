@@ -22,9 +22,9 @@ int main(int argc, char*argv[])
 	sprintf(option, "time_evolve_traj");
 
 	// Trajectory params
-	float dt = 5e-4;
-	int frameW = int(1e5);
-	int frameStart = int(0e4), frameEnd = int(1e4);
+	float dt = 1e-4;
+	int frameW = int(1e3);
+	int frameStart = int(0), frameEnd = int(5e4);
 
 	// System params
 	int nAtomTypes = 2;
@@ -39,11 +39,11 @@ int main(int argc, char*argv[])
 	int Nevery = 1;						// Obtain Nsample frames at intervals of Nevery before the current frame whose average we desire to compute
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_1e0/traj_res_1.cfg");
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_8e-1/Pe800/traj.cfg");
 
 	if(strcmp(option, "time_evolve_traj") == 0)
 	{
-		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_1e0/laneOrder_res1.dat");
+		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_8e-1/Pe800/lane_order.dat");
 
 		TRAJ -> openTrajectory();
 		TRAJ -> createOutputFile("step order");

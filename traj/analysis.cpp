@@ -452,9 +452,6 @@ void analysis::Trajectory::loadTrajectory(atom_style **ATOMS, System *BOX, int f
 
 					if(dy <= -0.5*BOX->Ly) ATOMS[new_frame][i].jumpy++;
 					else if(dy >= 0.5*BOX->Ly) ATOMS[new_frame][i].jumpy--;
-
-					// if(ATOMS[new_frame][i].element == 'O')
-					// 	printf("Frame %d, Jumpy = %d\n", new_frame, ATOMS[new_frame][i].jumpy);
 				}	
 			}
 
