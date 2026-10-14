@@ -3,11 +3,14 @@
 using namespace analysis;
 
 void computeVACF(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples);
-void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples);
-void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples);
+void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples, int total_threads = 1);
+void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples, int total_threads = 1);
 
 int main(int argc, char* argv[])
 {
+	int total_threads = 1;
+	sscanf(total_threads, "%d", &argv[1]);
+
 	float dt = 5e-4;
 	int frameW = 10;
 	int frameStart = int(0);
@@ -16,7 +19,7 @@ int main(int argc, char* argv[])
 	char *option = new char[50];
 	sprintf(option, "vacf");
 
-	int nSamples = 10000;
+	int nSamples = 1000;
 	int *frame_sep = new int[nSamples];
 	for(int i = 0; i < nSamples; i++)
 		frame_sep[i] = int(i*1);
@@ -46,7 +49,7 @@ int main(int argc, char* argv[])
 			compute_Directional_Corr(TRAJ, ATOMS, BOX, frame_sep, nSamples);
 
 		if(strcmp(option, "vacf") == 0)
-			computeVACF2(TRAJ, ATOMS, frame_sep, nSamples);
+			computeVACF2(TRAJ, ATOMS, frame_sep, nSamples, total_threads);
 
 		delete[] ATOMS;
 	}
@@ -104,7 +107,7 @@ void computeVACF(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamp
 
 }
 
-void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples)
+void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples, int total_threads)
 {
 	double *correlations = new double[nSamples];
 	long *counts = new long[nSamples];
@@ -120,7 +123,7 @@ void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSam
 
 	// int currFrame = 0;
 
-		#pragma omp parallel num_threads(10)
+		#pragma omp parallel num_threads(total_threads)
 		{
 			#pragma omp for
 			for(int ctr = 0; ctr < nSamples; ctr++)
@@ -157,7 +160,7 @@ void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSam
 
 }
 
-void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples)
+void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples, int total_threads)
 {
 	float *correlations = new float[nSamples];
 	long *counts = new long[nSamples];
