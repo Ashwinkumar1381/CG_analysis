@@ -12,7 +12,7 @@
 
 using namespace analysis;
 
-float computeLaneOrder1(atom_style *ATOMS, System *BOX, float slabW_y);
+float computeLaneOrder1(Trajectory *TRAJ, atom_style *ATOMS, System *BOX, float slabW_y);
 float computeLaneOrder2(atom_style *ATOMS, System *BOX, float acut);
 float computeLaneOrder2B(atom_style *ATOMS, System *BOX, float acut);
 
@@ -23,13 +23,13 @@ int main(int argc, char*argv[])
 
 	// Trajectory params
 	float dt = 1e-4;
-	int frameW = int(1e3);
 	int frameStart = int(0), frameEnd = int(5e4);
+	int frameW = int(2e4);
 
 	// System params
 	int nAtomTypes = 2;
 	float Lx = 150.0, Ly = 30.0; 
-	float slabW = 0.5;
+	float slabW = 1.0;
 	float rho = 0.45;
 	float acut = 1.0/sqrt(rho);
 
@@ -39,12 +39,31 @@ int main(int argc, char*argv[])
 	int Nevery = 1;						// Obtain Nsample frames at intervals of Nevery before the current frame whose average we desire to compute
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_8e-1/Pe800/traj.cfg");
+
+	if(argc == 1)
+	{
+		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/traj.cfg");			
+		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/lane_order.dat");
+	}
+	else
+	{
+		int temp;
+
+		sprintf(TRAJ -> fpathI, argv[1]);
+		sprintf(TRAJ -> fpathO, argv[2]);
+		
+		sscanf(argv[3], "%d", &temp);
+		frameStart = temp;
+		
+		sscanf(argv[4], "%d", &temp);
+		frameEnd = temp;
+
+		sscanf(argv[5], "%d", &temp);
+		TRAJ->frameWidth = temp;
+	}
 
 	if(strcmp(option, "time_evolve_traj") == 0)
 	{
-		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_8e-1/Pe800/lane_order.dat");
-
 		TRAJ -> openTrajectory();
 		TRAJ -> createOutputFile("step order");
 
@@ -69,14 +88,14 @@ int main(int argc, char*argv[])
 					nextFrame = frameStart + ctr*Nfreq;
 					frameStartAvg = nextFrame - Nsample*Nevery;
 
-					float order = computeLaneOrder1(ATOMS, BOX, slabW);
+					float order = computeLaneOrder1(TRAJ, ATOMS, BOX, slabW);
 					TRAJ -> write2file(TRAJ -> time, order);
 				}
 
 				if((TRAJ->frame_nr > frameStartAvg) and (TRAJ->frame_nr <= nextFrame))
 				{
 					if((TRAJ->frame_nr - frameStartAvg)%Nevery == 0)
-						avg += computeLaneOrder1(ATOMS, BOX, slabW);
+						avg += computeLaneOrder1(TRAJ, ATOMS, BOX, slabW);
 				}
 
 				if(TRAJ->frame_nr == nextFrame)
@@ -122,7 +141,7 @@ int main(int argc, char*argv[])
 			System *BOX = new System(TRAJ->Lx, TRAJ->Ly, TRAJ->Lz, TRAJ->nAtoms, nAtomTypes);
 
 			TRAJ -> readThisFrame(ATOMS);
-			float order = computeLaneOrder1(ATOMS, BOX, slabW);
+			float order = computeLaneOrder1(TRAJ, ATOMS, BOX, slabW);
 
 			TRAJ -> write2file(0.0, order);
 
@@ -145,7 +164,7 @@ int main(int argc, char*argv[])
 			System *BOX = new System(TRAJ->Lx, TRAJ->Ly, TRAJ->Lz, TRAJ->nAtoms, nAtomTypes);
 
 			TRAJ -> readThisFrame(ATOMS);
-			float order = computeLaneOrder1(ATOMS, BOX, slabW);
+			float order = computeLaneOrder1(TRAJ, ATOMS, BOX, slabW);
 
 			TRAJ->step = curr_step + add_step;
 			TRAJ -> write2file(0.0, order);
@@ -169,7 +188,7 @@ int main(int argc, char*argv[])
 
 			if(TRAJ->frame_nr >= frameStart and TRAJ->frame_nr <= frameEnd)
 			{
-				float order = computeLaneOrder1(ATOMS, BOX, slabW); 
+				float order = computeLaneOrder1(TRAJ, ATOMS, BOX, slabW); 
 				avg += order;
 
 				if(order > max) max = order;
@@ -191,7 +210,7 @@ int main(int argc, char*argv[])
 }
 
 /* Based on the lane order parameter as defined by Wächtler, C.W. et al. (2016) Physical Review E, 94(5) */
-float computeLaneOrder1(atom_style *ATOMS, System *BOX, float slabW_y)
+float computeLaneOrder1(Trajectory *TRAJ, atom_style *ATOMS, System *BOX, float slabW_y)
 {
 	int nBins = int(BOX->Ly/slabW_y);
 
@@ -205,7 +224,16 @@ float computeLaneOrder1(atom_style *ATOMS, System *BOX, float slabW_y)
 
 	for(int i = 0; i < BOX->nAtoms; i++)
 	{
-		int bin_id = int(ATOMS[i].ryt1 / slabW_y);
+		int bin_id = 0;
+
+		if(ATOMS[i].ryt1 >= BOX->Ly)
+			bin_id = 0;
+		else if(ATOMS[i].ryt1 < 0.0)
+			bin_id = nBins - 1;
+		else
+			bin_id = int(ATOMS[i].ryt1 / slabW_y);
+
+		// fprintf(TRAJ->fileO, "\n%d %d", i + 1, bin_id);
 
 		if(ATOMS[i].element == 'N')
 			phi[bin_id] += -1.0;
@@ -219,6 +247,10 @@ float computeLaneOrder1(atom_style *ATOMS, System *BOX, float slabW_y)
 	float order = 0.0;
 	for(int i = 0; i < nBins; i++)
 	{
+		// int nA = int(0.5*(phi[i] + bin_ctr[i]));
+		// int nB = int(bin_ctr[i] - nA);
+		// printf("\nBin %d, %.1f, %d, %d, %d", i + 1, phi[i], bin_ctr[i], nA, nB);
+
 		if(bin_ctr[i] != 0)
 			order += abs(phi[i] / bin_ctr[i]);
 		else

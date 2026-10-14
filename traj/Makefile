@@ -1,4 +1,4 @@
-# Makefile for the ld_analysis dir
+# Makefile for the CG_analysis dir
 
 CC = g++
 
@@ -50,6 +50,9 @@ collision: collisions.cpp analysis.cpp
 
 velocity: velocity.cpp analysis.cpp
 	$(CC) $(CFLAGS) velocity.cpp analysis.cpp -o ./bin/velocity.o
+
+vacf: vacf.cpp analysis.cpp
+	$(CC) $(CFLAGS) $(OMP_FLAGS) vacf.cpp analysis.cpp -o ./bin/vacf.o
 
 clean:
 	rm -f ./bin/*.o

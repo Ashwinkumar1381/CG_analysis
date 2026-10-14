@@ -21,25 +21,38 @@ int main(int argc, char *argv[])
 	int nAtomTypes = 2;
 
 	// ----------- Trajectory Params -----------
-	int frameStart = int(0), frameEnd = int(5e4);
+	int frameStart = int(15e3), frameEnd = int(5e4);
 	float dt = 1e-4;
-	int frameW = int(1e3);
+	int frameW = int(2e4);
 
 	char group[5] = "all";
-	int nSample = 41;
+	int nSample = int(43);
+
 	int delFrames[nSample] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600,
-							  700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000};
+							  700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000, 35000, 40000};
+
+	// int delFrames[nSample];
+	// for(int i = 0; i < 199; i++) delFrames[i] = int(1 + 1*i);
+	// for(int i = 0; i < 180; i++) delFrames[i + 199] = int(200 + 10*i);
+	// for(int i = 0; i <= 80; i++) delFrames[i + 379] = int(2000 + 100*i);
+
+	// for(int i = 0; i < nSample; i++) printf("\ndelFrame = %d", delFrames[i]);
+
+	// exit(0);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
 
 	if(argc == 1)
 	{
-		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_8e-1/Pe800/traj.cfg");
-		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_8e-1/Pe800/msd.dat");	
+		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/traj.cfg");
+		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/msd.dat");	
 	}
 	else
 	{
 		int temp;
+
+		sprintf(TRAJ -> fpathI, argv[1]);
+		sprintf(TRAJ -> fpathO, argv[2]);
 		
 		sscanf(argv[3], "%d", &temp);
 		frameStart = temp;
@@ -47,8 +60,8 @@ int main(int argc, char *argv[])
 		sscanf(argv[4], "%d", &temp);
 		frameEnd = temp;
 
-		sprintf(TRAJ -> fpathI, argv[1]);
-		sprintf(TRAJ -> fpathO, argv[2]);
+		sscanf(argv[5], "%d", &temp);
+		TRAJ->frameWidth = temp;
 	}
 
 	TRAJ -> openTrajectory();
@@ -80,8 +93,6 @@ int main(int argc, char *argv[])
 
 void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **ATOMS, char group[], int delFrames[], int nSample)
 {
-	printf("\nComputing MSD...\n");
-
 	double **MSD = new double*[4];
 	long *count = new long[nSample];
 
@@ -107,8 +118,12 @@ void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **
 		loopMax = group_lists[0][group_id - 1];
 	}
 
+	printf("\nComputing MSD...");
+
 	for(int currFrame = 0; currFrame < TRAJ->totalFrames; currFrame++)
 	{
+		// printf("\nComputing MSD for frame %d...", currFrame);
+
 		int ctr = 0;
 
 		while(ctr < nSample)
@@ -135,9 +150,6 @@ void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **
 					if(TRAJ->dimension == 2)
 					{
 						MSD[0][ctr] += (dx2 + dy2);
-						MSD[1][ctr] += dx2;
-						MSD[2][ctr] += dy2;
-						MSD[3][ctr] += dxdy;
 					}
 
 					else if(TRAJ->dimension == 3)
@@ -145,6 +157,10 @@ void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **
 						double dz2 = dz*dz;
 						MSD[0][ctr] += (dx2 + dy2 + dz2);
 					}
+
+					MSD[1][ctr] += dx2;
+					MSD[2][ctr] += dy2;
+					MSD[3][ctr] += dxdy;
 					
 					count[ctr] += 1;
 				}
@@ -167,7 +183,10 @@ void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **
 void analysis::Trajectory::write2file(double **MSD, long *count, int *delFrames, int nSample)
 {
 	for(int i = 0; i < nSample; i++)
+	{
 		fprintf(fileO, "\n%g %ld %f %f %f %f", delFrames[i]*frameWidth*timeStep, count[i], MSD[0][i], MSD[1][i], MSD[2][i], MSD[3][i]);
+		// printf("\n%g %ld %f %f %f %f", delFrames[i]*frameWidth*timeStep, count[i], MSD[0][i], MSD[1][i], MSD[2][i], MSD[3][i]);
+	}
 
 	fprintf(fileO, "\n");
 }
