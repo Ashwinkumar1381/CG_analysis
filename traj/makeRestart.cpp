@@ -20,14 +20,14 @@ int main(int argc, char* argv[])
 	char typeLabels[2] = {'O', 'N'};
 
 	// ---------- Trajectory Params ----------
-	float dt = 5e-4;
-	int frameW = int(1e5);
+	float dt = 1e-4;
+	int frameW = int(2e4);
 	long eqStep = long(1e7);
-	long chooseStep = long(5e9);
+	long chooseStep = long(2e9);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_1e0/traj2.cfg");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_1e0/lane.%ld.res", eqStep + chooseStep);
+	sprintf(TRAJ->fpathI, "//run/media/ethaya_lab_c1/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/frames/frame2010000000.cfg");
+	sprintf(TRAJ->fpathO, "//run/media/ethaya_lab_c1/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/lane.%ld.res", eqStep + chooseStep);
 	TRAJ -> openTrajectory();
 
 	atom_style *ATOMS = new atom_style[TRAJ -> nAtoms]; 

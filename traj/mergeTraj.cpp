@@ -15,18 +15,18 @@ int main(int argc, char* argv[])
 	int nAtomTypes = 2;
 
 	/* ---------- Trajectory Params ---------- */
-	float dt = 5e-4;
-	int frameW = int(1e5);
+	float dt = 1e-4;
+	int frameW = int(2e4);
 	
-	int nFiles = 12;
-	long startStep[nFiles] = {long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5), long(1e5)};
+	int nFiles = 2;
+	long startStep[nFiles] = {long(1e7+1.0e9), long(0)};
 
-	long endStep[nFiles]   = {long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7), long(1e7)};
+	long endStep[nFiles]   = {long(1e7+2.0e9), long(2e9)};
 
-	string filenames[nFiles] = {"50", "70", "80", "100", "150", "200", "250", "300", "350", "400", "450", "500"};
+	string filenames[nFiles] = {"long_traj", "long_traj_res"};
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/traj_eq.%s", TRAJ->format);
+	sprintf(TRAJ->fpathO, "/home/ethaya_lab_c1/Desktop/ashwin_md/LD/lmp/jamming/tau_4e-1/Pe32/long_traj_merged.%s", TRAJ->format);
 	TRAJ -> createOutputFile();
 
 	atom_style *ATOMS;
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
 	for(int i = 0; i < nFiles; i++)
 	{
-		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd%s/tau_1e-3/traj1.%s", (filenames[i]).c_str(), TRAJ->format);
+		sprintf(TRAJ->fpathI, "/home/ethaya_lab_c1/Desktop/ashwin_md/LD/lmp/jamming/tau_4e-1/Pe32/%s.%s", (filenames[i]).c_str(), TRAJ->format);
 		TRAJ -> openTrajectory();
 
 		long addStep = 0;

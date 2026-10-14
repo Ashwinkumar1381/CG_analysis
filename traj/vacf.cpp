@@ -9,7 +9,7 @@ void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX,
 int main(int argc, char* argv[])
 {
 	int total_threads = 1;
-	sscanf(total_threads, "%d", &argv[1]);
+	sscanf(argv[1], "%d", &total_threads);
 
 	float dt = 5e-4;
 	int frameW = 10;
@@ -25,8 +25,8 @@ int main(int argc, char* argv[])
 		frame_sep[i] = int(i*1);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R3/short_traj_res.cfg");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R3/vacf.dat");
+	sprintf(TRAJ->fpathI, "/lfs/usrhome/phd/ch24d022/scratch/ashwin/jamming/Fd100/tau_1e0/R2/short_traj_res.cfg");
+	sprintf(TRAJ->fpathO, "/lfs/usrhome/phd/ch24d022/scratch/ashwin/jamming/Fd100/tau_1e0/R2/vacf.dat");
 	TRAJ -> openTrajectory();
 
 	if(frameEnd < frameStart)
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 		TRAJ -> loadTrajectory(ATOMS, BOX, frameStart, frameEnd, true);
 
 		if(strcmp(option, "directional_corr") == 0)
-			compute_Directional_Corr(TRAJ, ATOMS, BOX, frame_sep, nSamples);
+			compute_Directional_Corr(TRAJ, ATOMS, BOX, frame_sep, nSamples, total_threads);
 
 		if(strcmp(option, "vacf") == 0)
 			computeVACF2(TRAJ, ATOMS, frame_sep, nSamples, total_threads);

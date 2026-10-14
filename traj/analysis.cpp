@@ -356,6 +356,11 @@ void analysis::Trajectory::openTrajectory(bool count)
 				sprintf(line_fmt, "%%%s %%%s %%%s %%%s\n", "d", "c", "f", "f");
 				line_fmt_mode = 6;
 			}
+			else if(strcmp(pipeString, "ITEM: ATOMS id element vx vy\n") == 0)
+			{
+				sprintf(line_fmt, "%%%s %%%s %%%s %%%s\n", "d", "c", "f", "f");
+				line_fmt_mode = 7;
+			}
 			else
 			{
 				printf("Invalid line format in trajectory %s. Exiting...\n", fpathI);
@@ -567,6 +572,9 @@ void analysis::Trajectory::readThisFrame(atom_style *ATOMS)
 
 			else if(line_fmt_mode == 6)
 				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1);
+
+			else if(line_fmt_mode == 7)
+				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].vx, &ATOMS[pid].vy);
 
 			if(ATOMS[pid].element == 'O')
 			{
