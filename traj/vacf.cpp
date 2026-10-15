@@ -3,30 +3,36 @@
 using namespace analysis;
 
 void computeVACF(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples);
-void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples, int total_threads = 1);
-void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples, int total_threads = 1);
+void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples, int frameMax, int total_threads = 1);
+void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples, int frameMax, int total_threads = 1);
 
 int main(int argc, char* argv[])
 {
 	int total_threads = 1;
-	sscanf(argv[1], "%d", &total_threads);
+
+	if(argc > 1)
+	{
+		sscanf(argv[1], "%d", &total_threads);
+	}
 
 	float dt = 5e-4;
 	int frameW = 10;
 	int frameStart = int(0);
-	int frameEnd = int(5e4);
+	int frameEnd = int(2e5);
+	int frameMax = int(5e4);
 	int nAtomTypes = 2;
 	char *option = new char[50];
 	sprintf(option, "vacf");
 
-	int nSamples = 1000;
+	int nSamples = 100000;
 	int *frame_sep = new int[nSamples];
 	for(int i = 0; i < nSamples; i++)
 		frame_sep[i] = int(i*1);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "/lfs/usrhome/phd/ch24d022/scratch/ashwin/jamming/Fd100/tau_1e0/R2/short_traj_res.cfg");
-	sprintf(TRAJ->fpathO, "/lfs/usrhome/phd/ch24d022/scratch/ashwin/jamming/Fd100/tau_1e0/R2/vacf.dat");
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R2/short_traj_res.cfg");
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R2/vacf.dat");
+	// sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R2/pcorr.dat");
 	TRAJ -> openTrajectory();
 
 	if(frameEnd < frameStart)
@@ -46,10 +52,10 @@ int main(int argc, char* argv[])
 		TRAJ -> loadTrajectory(ATOMS, BOX, frameStart, frameEnd, true);
 
 		if(strcmp(option, "directional_corr") == 0)
-			compute_Directional_Corr(TRAJ, ATOMS, BOX, frame_sep, nSamples, total_threads);
+			compute_Directional_Corr(TRAJ, ATOMS, BOX, frame_sep, nSamples, frameMax, total_threads);
 
 		if(strcmp(option, "vacf") == 0)
-			computeVACF2(TRAJ, ATOMS, frame_sep, nSamples, total_threads);
+			computeVACF2(TRAJ, ATOMS, frame_sep, nSamples, frameMax, total_threads);
 
 		delete[] ATOMS;
 	}
@@ -107,7 +113,7 @@ void computeVACF(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamp
 
 }
 
-void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples, int total_threads)
+void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSamples, int frameMax, int total_threads)
 {
 	double *correlations = new double[nSamples];
 	long *counts = new long[nSamples];
@@ -117,7 +123,7 @@ void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSam
 		counts[i] = 0;
 	}
 
-	for(int currFrame = 0; currFrame < TRAJ->totalFrames; currFrame++)
+	for(int currFrame = 0; currFrame < frameMax; currFrame++)
 	{
 		printf("\nProcessing frame %d", currFrame);
 
@@ -136,66 +142,86 @@ void computeVACF2(Trajectory *TRAJ, atom_style **ATOMS, int *frame_sep, int nSam
 						double curr_velocity = sqrt(ATOMS[currFrame][i].vx*ATOMS[currFrame][i].vx + ATOMS[currFrame][i].vy*ATOMS[currFrame][i].vy);
 						double next_velocity = sqrt(ATOMS[nextFrame][i].vx*ATOMS[nextFrame][i].vx + ATOMS[nextFrame][i].vy*ATOMS[nextFrame][i].vy);
 
-						double prod = (ATOMS[currFrame][i].vx*ATOMS[nextFrame][i].vx + ATOMS[currFrame][i].vy*ATOMS[nextFrame][i].vy)/(curr_velocity*next_velocity);
+						if(curr_velocity!= 0 and next_velocity != 0)
+						{
+							double prod = (ATOMS[currFrame][i].vx*ATOMS[nextFrame][i].vx + ATOMS[currFrame][i].vy*ATOMS[nextFrame][i].vy)/(curr_velocity*next_velocity);
 
-						correlations[ctr] += prod;
-						counts[ctr] += 1;
+							correlations[ctr] += prod;
+							counts[ctr] += 1;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	for(int ctr = 0; ctr < nSamples; ctr++)
-		correlations[ctr] /= double(counts[ctr]);
-
 	TRAJ -> createOutputFile("frame_sep time count vacf");
 
 	for(int ctr = 0; ctr < nSamples; ctr++)
 	{
-		// correlations[ctr] /= correlations[0];
-		// printf("Frame_sep = %d, counts = %ld, vacf = %f\n", frame_sep[ctr], counts[ctr], correlations[ctr]);
+		if(counts[ctr] > 0)
+			correlations[ctr] /= double(counts[ctr]);
+
 		fprintf(TRAJ->fileO, "\n%d %f %ld %f", frame_sep[ctr], float(frame_sep[ctr]*TRAJ->frameWidth*TRAJ->timeStep), counts[ctr], correlations[ctr]);
 	}
 
 }
 
-void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples, int total_threads)
+void compute_Directional_Corr(Trajectory *TRAJ, atom_style **ATOMS, System *BOX, int *frame_sep, int nSamples, int frameMax, int total_threads)
 {
-	float *correlations = new float[nSamples];
+	double *correlations = new double[nSamples];
 	long *counts = new long[nSamples];
-
 	for(int i = 0; i < nSamples; i++)
 	{
 		correlations[i] = 0.0;
 		counts[i] = 0;
 	}
 
-	for(int ctr = 0; ctr < nSamples; ctr++)
+	for(int currFrame = 0; currFrame < frameMax - 1; currFrame++)
 	{
-		int nextFrame = 0 + frame_sep[ctr];
+		printf("\nProcessing frame %d", currFrame);
+	
+	// int currFrame = 0;
 
-		for(int i = 0; i < TRAJ->nAtoms; i++)
+		#pragma omp parallel num_threads(total_threads)
 		{
-			float dx_t1 = ATOMS[1][i].rxt1 - ATOMS[0][i].rxt1 + BOX->Lx*(ATOMS[1][i].jumpx - ATOMS[0][i].jumpx);
-			float dy_t1 = ATOMS[1][i].ryt1 - ATOMS[0][i].ryt1 + BOX->Ly*(ATOMS[1][i].jumpy - ATOMS[0][i].jumpy);
+			#pragma omp for
+			for(int ctr = 0; ctr < nSamples; ctr++)
+			{
+				int nextFrame = currFrame + frame_sep[ctr];
+				if(nextFrame < TRAJ->totalFrames - 1)
+				{
+					for(int i = 0; i < TRAJ->nAtoms; i++)
+					{
+						double dx_t1 = ATOMS[currFrame + 1][i].rxt1 - ATOMS[currFrame][i].rxt1 + BOX->Lx*(ATOMS[currFrame + 1][i].jumpx - ATOMS[currFrame][i].jumpx);
+						double dy_t1 = ATOMS[currFrame + 1][i].ryt1 - ATOMS[currFrame][i].ryt1 + BOX->Ly*(ATOMS[currFrame + 1][i].jumpy - ATOMS[currFrame][i].jumpy);
 
-			float dx_t2 = ATOMS[nextFrame + 1][i].rxt1 - ATOMS[nextFrame][i].rxt1 + BOX->Lx*(ATOMS[nextFrame + 1][i].jumpx - ATOMS[nextFrame][i].jumpx);
-			float dy_t2 = ATOMS[nextFrame + 1][i].ryt1 - ATOMS[nextFrame][i].ryt1 + BOX->Ly*(ATOMS[nextFrame + 1][i].jumpy - ATOMS[nextFrame][i].jumpy);
+						double dx_t2 = ATOMS[nextFrame + 1][i].rxt1 - ATOMS[nextFrame][i].rxt1 + BOX->Lx*(ATOMS[nextFrame + 1][i].jumpx - ATOMS[nextFrame][i].jumpx);
+						double dy_t2 = ATOMS[nextFrame + 1][i].ryt1 - ATOMS[nextFrame][i].ryt1 + BOX->Ly*(ATOMS[nextFrame + 1][i].jumpy - ATOMS[nextFrame][i].jumpy);
 
-			float disp_t1 = sqrt(dx_t1*dx_t1 + dy_t1*dy_t1);
-			float disp_t2 = sqrt(dx_t2*dx_t2 + dy_t2*dy_t2);
-			float prod = (dx_t1*dx_t2 + dy_t1*dy_t2)/(disp_t1*disp_t2);
+						double disp_t1 = sqrt(dx_t1*dx_t1 + dy_t1*dy_t1);
+						double disp_t2 = sqrt(dx_t2*dx_t2 + dy_t2*dy_t2);
 
-			correlations[ctr] += prod;
-			counts[ctr] += 1;
+						if(disp_t1 != 0 and disp_t2 != 0)
+						{
+							double prod = (dx_t1*dx_t2 + dy_t1*dy_t2)/(disp_t1*disp_t2);
+
+							correlations[ctr] += prod;
+							counts[ctr] += 1;
+						}
+					}
+				}
+			}
 		}
 	}
 
+	TRAJ -> createOutputFile("frame_sep time count pcorr");
+
 	for(int ctr = 0; ctr < nSamples; ctr++)
 	{
-		correlations[ctr] /= counts[ctr];
-		printf("Frame_sep = %d, counts = %ld, vacf = %f\n", frame_sep[ctr], counts[ctr], correlations[ctr]);
-		// fprintf(TRAJ->fileO, "\n%d %f %ld %f", frame_sep[ctr], float(frame_sep[ctr]*TRAJ->frameWidth*TRAJ->timeStep), counts[ctr], correlations[ctr]);
+		if(counts[ctr] > 0)
+			correlations[ctr] /= counts[ctr];
+		
+		fprintf(TRAJ->fileO, "\n%d %f %ld %f", frame_sep[ctr], float(frame_sep[ctr]*TRAJ->frameWidth*TRAJ->timeStep), counts[ctr], correlations[ctr]);
 	}
 }
