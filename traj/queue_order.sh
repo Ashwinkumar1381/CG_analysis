@@ -1,6 +1,6 @@
 #! /bin/bash
 
-dirpath="//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_4e-1"
+dirpath="//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_1e-1"
 qpath="$dirpath/order_queue.dat"
 
 count=0

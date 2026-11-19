@@ -1,7 +1,7 @@
 #! /bin/bash
 
-dirpath="//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_4e-1"
-qpath="$dirpath/msd_queue.dat"
+dirpath="//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100"
+qpath="$dirpath/short_msd_queue.dat"
 
 count=0
 while read -r -a line; do
@@ -16,8 +16,8 @@ while read -r -a line; do
 		frameW=${line[3]}
 		fname=${line[4]}
 
-		fpathI="$dirpath/Pe$Ped/$fname"
-		fpathO="$dirpath/Pe$Ped/msd.dat"
+		fpathI="$dirpath/tau_$Ped/$fname"
+		fpathO="$dirpath/tau_$Ped/short_msd.dat"
 
 		if [ -f $fpathI ]; then
 

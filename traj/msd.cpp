@@ -21,20 +21,21 @@ int main(int argc, char *argv[])
 	int nAtomTypes = 2;
 
 	// ----------- Trajectory Params -----------
-	int frameStart = int(15e3), frameEnd = int(5e4);
-	float dt = 1e-4;
-	int frameW = int(2e4);
+	int frameStart = int(0), frameEnd = int(2e4);
+	float dt = 5e-4;
+	int frameW = int(100);
 
 	char group[5] = "all";
-	int nSample = int(43);
+	int nSample = int(510);
 
-	int delFrames[nSample] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600,
-							  700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000, 35000, 40000};
+	// int delFrames[nSample] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600,
+	// 						  700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000};
 
-	// int delFrames[nSample];
-	// for(int i = 0; i < 199; i++) delFrames[i] = int(1 + 1*i);
-	// for(int i = 0; i < 180; i++) delFrames[i + 199] = int(200 + 10*i);
-	// for(int i = 0; i <= 80; i++) delFrames[i + 379] = int(2000 + 100*i);
+	int delFrames[nSample];
+	for(int i = 0; i < 199; i++) delFrames[i] = int(1 + 1*i);
+	for(int i = 0; i < 180; i++) delFrames[i + 199] = int(200 + 10*i);
+	for(int i = 0; i <= 130; i++) delFrames[i + 379] = int(2000 + 100*i);
+	// for(int i = 0; i <=5; i++) delFrames[i + 460] = int(15000 + 5000*i);
 
 	// for(int i = 0; i < nSample; i++) printf("\ndelFrame = %d", delFrames[i]);
 
@@ -44,8 +45,8 @@ int main(int argc, char *argv[])
 
 	if(argc == 1)
 	{
-		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/traj.cfg");
-		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/msd.dat");	
+		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/vacf/tau_1e-2/R3/long_traj.cfg");
+		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/vacf/tau_1e-2/R3/msd_long.dat");	
 	}
 	else
 	{
@@ -118,11 +119,11 @@ void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **
 		loopMax = group_lists[0][group_id - 1];
 	}
 
-	printf("\nComputing MSD...");
+	// printf("\nComputing MSD...");
 
 	for(int currFrame = 0; currFrame < TRAJ->totalFrames; currFrame++)
 	{
-		// printf("\nComputing MSD for frame %d...", currFrame);
+		printf("\nComputing MSD for frame %d...", currFrame);
 
 		int ctr = 0;
 

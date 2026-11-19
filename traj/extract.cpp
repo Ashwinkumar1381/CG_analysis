@@ -8,16 +8,31 @@ int main(int argc, char *argv[])
 	char *option = new char[10];
 	sprintf(option, "single");
 
-	int particle_num = 825;
+	int num_particles = 1;
 	int frameStart = int(3820), frameEnd = int(4940);
 	int frameW = int(50);
 	float dt = 5e-4;
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
+
 	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0_R2/short_traj.cfg");
 	// sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/binary_collisions/tests/coords_tau_1e-3.dat");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0_R2/coords_p%d.dat", particle_num);
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0_R2/coords");
+	
+	if(argc != 1)
+		num_particles = argc - 1;
 
+	int *particle_nums = new int[num_particles];
+	if(argc != 1)
+	{
+		int temp;
+		for(int i = 1; i <= num_particles; i++)
+		{
+			sscanf(argv[i], "%d", &temp);
+			particle_nums[i - 1] = temp;
+		}
+	}
+	
 	TRAJ -> openTrajectory();
 
 	TRAJ -> totalFrames = int(frameEnd - frameStart + 1);
@@ -25,24 +40,50 @@ int main(int argc, char *argv[])
 
 	if(strcmp(option, "single") == 0)
 	{
-		TRAJ -> createOutputFile("step id element x y vx vy fx fy ix iy\n");
+		printf("\nExtracting coordinates for %d particles from frame %d to frame %d\n", num_particles, frameStart, frameEnd);
 
 		char *fmt = new char[50];
-		sprintf(fmt, "%%%s %s", "ld", TRAJ->line_fmt);
+		sprintf(fmt, "%%%s %%%s %%%s %%%s %%%s\n", "ld", "d", "c", "g", "g");
+
+		char *fpathO = new char[500];
+		sprintf(fpathO, "%s", TRAJ->fpathO);
 
 		while( !feof(TRAJ->fileI) )
 		{
 			TRAJ -> readThisFrame(ATOMS);
 
+			if(TRAJ->frame_nr == frameStart)
+			{
+				for(int i = 0; i < num_particles; i++)
+				{
+					sprintf(TRAJ->fpathO, "%s/coords_p%d.dat", fpathO, particle_nums[i]);
+					TRAJ -> createOutputFile("step id element x y\n");
+					fclose(TRAJ->fileO);
+				}
+			}
+
 			if(TRAJ->frame_nr >= frameStart and TRAJ->frame_nr <= frameEnd)
 			{
-				int pid = particle_num - 1;
+				printf("\nProcessing frame %d", TRAJ->frame_nr - frameStart + 1);
 
-				fprintf(TRAJ->fileO, fmt, TRAJ->step, ATOMS[pid].atom_id, ATOMS[pid].element, ATOMS[pid].rxt1, ATOMS[pid].ryt1, ATOMS[pid].vx, ATOMS[pid].vy, ATOMS[pid].fx, ATOMS[pid].fy, ATOMS[pid].jumpx, ATOMS[pid].jumpy);
+				for(int i = 0; i < num_particles; i++)
+				{
+					sprintf(TRAJ->fpathO, "%s/coords_p%d.dat", fpathO, particle_nums[i]);
+					TRAJ->fileO = fopen(TRAJ->fpathO, "a+");
+
+					int pid = particle_nums[i] - 1;
+
+					fprintf(TRAJ->fileO, fmt, TRAJ->step, ATOMS[pid].atom_id, ATOMS[pid].element, ATOMS[pid].rxt1, ATOMS[pid].ryt1, ATOMS[pid].jumpx, ATOMS[pid].jumpy);
+
+					fclose(TRAJ->fileO);
+				}
 			}
+
+			if(TRAJ->frame_nr == frameEnd)
+				break;
 		}
 
-		printf("\n\nSucessfully imported coordinates for %d frames\n", TRAJ->totalFrames);
+		// printf("\n\nSucessfully imported coordinates for %d frames\n", TRAJ->totalFrames);
 	}
 
 	if(strcmp(option, "binary") == 0)
@@ -57,7 +98,10 @@ int main(int argc, char *argv[])
 		}	
 	}
 
-	TRAJ -> closeTrajectory(true, true);
+	if(TRAJ -> fileO == NULL)
+		TRAJ -> closeTrajectory(true, false);
+	else
+		TRAJ -> closeTrajectory(true, true);
 
 	return(0);
 }

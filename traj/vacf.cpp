@@ -16,23 +16,23 @@ int main(int argc, char* argv[])
 	}
 
 	float dt = 5e-4;
-	int frameW = 10;
+	int frameW = int(2e4);
 	int frameStart = int(0);
-	int frameEnd = int(2e5);
+	int frameEnd = int(5e4);
 	int frameMax = int(5e4);
 	int nAtomTypes = 2;
 	char *option = new char[50];
-	sprintf(option, "vacf");
+	sprintf(option, "pcorr");
 
-	int nSamples = 100000;
+	int nSamples = 501;
 	int *frame_sep = new int[nSamples];
 	for(int i = 0; i < nSamples; i++)
 		frame_sep[i] = int(i*1);
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R2/short_traj_res.cfg");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R2/vacf.dat");
-	// sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0/R2/pcorr.dat");
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e-3/long_traj.cfg");
+	// sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e-3/vacf.dat");
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e-3/pcorr.dat");
 	TRAJ -> openTrajectory();
 
 	if(frameEnd < frameStart)
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
 
 		TRAJ -> loadTrajectory(ATOMS, BOX, frameStart, frameEnd, true);
 
-		if(strcmp(option, "directional_corr") == 0)
+		if(strcmp(option, "pcorr") == 0)
 			compute_Directional_Corr(TRAJ, ATOMS, BOX, frame_sep, nSamples, frameMax, total_threads);
 
 		if(strcmp(option, "vacf") == 0)

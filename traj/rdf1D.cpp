@@ -15,14 +15,15 @@
 using namespace analysis;
 
 float*** buildRDF_1D(int nRDFtypes, int Nbins[]);
+void computeRDF_radial(float *RDF_r, atom_style *ATOMS, System *BOX, int nRDFtypes, float Rcut[], float binW[], char option[]);
 void computeRDF_1D(float ***RDF_x_y, atom_style *ATOMS, System *BOX, int nRDFtypes, float Rcut[], float binW[], char option[]);
 
 int main(int argc, char* argv[])
 {
 	// ---------- Trajectory params ----------
 	float dt = 5e-4;
-	int frameW = int(1e5);
-	int frameStart = int(3e4), frameEnd = int(5e4);
+	int frameW = int(1e4);
+	int frameStart = int(1e3), frameEnd = int(2e3);
 	int frameEvery = 1;
 
 	// ---------- System params ----------
@@ -31,14 +32,14 @@ int main(int argc, char* argv[])
 	float Lx = 150.0, Ly = 30.0, rho = 0.45;
 
 	// ---------- RDF params ----------
-	float Rcut[2] = {70.0, 10.0};
-	char option[10] = "asymm";
-	int Nbins[2] = {700, 100};
+	float Rcut[2] = {10.0, 10.0};
+	char option[10] = "radial";
+	int Nbins[2] = {500, 500};
 
 	// ---------- Opening trajectory ----------
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_2e-1/traj2.cfg");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd100/tau_2e-1/laneRDF_1D_%s_long.dat", option);
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd0/test3/traj1.cfg");
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/lane/Aug_Nov2025/Fd0/test3/laneRDF_1D_%s_eq.dat", option);
 	TRAJ -> openTrajectory();
 
 	atom_style *ATOMS = new atom_style[TRAJ->nAtoms];
@@ -56,6 +57,12 @@ int main(int argc, char* argv[])
 
 	auto RDF_x_y = buildRDF_1D(nRDFtypes, Nbins);
 
+	float *RDF_r = new float[Nbins[0]];
+	for(int i = 0; i < Nbins[0]; i++)
+	{
+		RDF_r[i] = 0.0;
+	}
+
 	int ctr = 0;
 	while( !feof(TRAJ->fileI) )
 	{
@@ -65,7 +72,11 @@ int main(int argc, char* argv[])
 		{
 			ctr++;
 			printf("Processing step %ld, frame %d\n", TRAJ->step, ctr);
-			computeRDF_1D(RDF_x_y, ATOMS, BOX, nRDFtypes, Rcut, binW, option);
+
+			if(strcmp(option, "radial") == 0)
+				computeRDF_radial(RDF_r, ATOMS, BOX, nRDFtypes, Rcut, binW, option);
+			else
+				computeRDF_1D(RDF_x_y, ATOMS, BOX, nRDFtypes, Rcut, binW, option);
 		}
 
 		if(TRAJ->frame_nr == frameEnd)
@@ -74,34 +85,53 @@ int main(int argc, char* argv[])
 
 	// ---------- RDF normalization ----------
 	float FAC[nRDFtypes] = {1.0, xA*xA, xA*xB, xB*xA, xB*xB};
-	float normx = 1.0, normy = 1.0;
+	float norm = 1.0, normx = 1.0, normy = 1.0;
 
-	if(strcmp(option, "symm") == 0)
+	if(strcmp(option, "radial") == 0)
 	{
-		normx = rho * TRAJ->nAtoms * (2.0*binW[0]) * (2.0*binW[1]) * ctr;
-		normy = normx;
-	}
-	else if(strcmp(option, "asymm") == 0)
-	{
-		normx = rho * TRAJ->nAtoms * (1.0*binW[0]) * (2.0*binW[1]) * ctr;
-		normy = rho * TRAJ->nAtoms * (2.0*binW[0]) * (1.0*binW[1]) * ctr;
-	}
+		norm = rho * TRAJ->nAtoms * (2.0 * 3.1415 * binW[0]) * ctr;
 
-	for(int i = 0; i < 2; i++)
-	{
-		for(int j = 0; j < nRDFtypes; j++)
+		for(int i = 0; i < Nbins[0]; i++)
+			RDF_r[i] /= ((i + 0.5)* binW[0] * norm);
+
+		TRAJ -> createOutputFile("bin rn gr_all\n");
+
+		for(int i = 0; i < Nbins[0]; i++)
 		{
-			for(int k = 0; k < Nbins[i]; k++)
+			// printf("%d %f %f\n", i + 1, (i + 0.5)*binW[0], RDF_r[i]);
+			fprintf(TRAJ->fileO, "%d %f %f\n", i + 1, (i + 0.5)*binW[0], RDF_r[i]);
+		}
+	}
+
+	else
+	{
+		if(strcmp(option, "symm") == 0)
+		{
+			normx = rho * TRAJ->nAtoms * (2.0*binW[0]) * (2.0*binW[1]) * ctr;
+			normy = normx;
+		}
+		else if(strcmp(option, "asymm") == 0)
+		{
+			normx = rho * TRAJ->nAtoms * (1.0*binW[0]) * (2.0*binW[1]) * ctr;
+			normy = rho * TRAJ->nAtoms * (2.0*binW[0]) * (1.0*binW[1]) * ctr;
+		}
+
+		for(int i = 0; i < 2; i++)
+		{
+			for(int j = 0; j < nRDFtypes; j++)
 			{
-				if(i == 0) RDF_x_y[i][j][k] /= (FAC[j] * normx);
-				else if(i == 1) RDF_x_y[i][j][k] /= (FAC[j] * normy);
-			}
+				for(int k = 0; k < Nbins[i]; k++)
+				{
+					if(i == 0) RDF_x_y[i][j][k] /= (FAC[j] * normx);
+					else if(i == 1) RDF_x_y[i][j][k] /= (FAC[j] * normy);
+				}
+			}	
 		}	
 	}
 
 	printf("\nRDF computed and averaged over %d frames.\n", ctr);
 
-	TRAJ -> write2file(RDF_x_y, nRDFtypes, Nbins, binW, option);
+	// TRAJ -> write2file(RDF_x_y, nRDFtypes, Nbins, binW, option);
 	TRAJ -> closeTrajectory();
 }
 
@@ -120,6 +150,35 @@ float*** buildRDF_1D(int nRDFtypes, int Nbins[])
 	}
 
 	return(RDF_x_y);
+}
+
+void computeRDF_radial(float *RDF_r, atom_style *ATOMS, System *BOX, int nRDFtypes, float Rcut[], float binW[], char option[])
+{
+	for(int i = 0; i < BOX->nAtoms; i++)
+	{
+		float rxi = ATOMS[i].rxt1;
+		float ryi = ATOMS[i].ryt1;
+
+		for(int j = i + 1; j < BOX->nAtoms; j++)
+		{
+			float rxj = ATOMS[j].rxt1;
+			float ryj = ATOMS[j].ryt1;
+
+			float dxij = rxj - rxi;
+			float dyij = ryj - ryi;
+
+			BOX -> checkMinImage(&dxij, &dyij);
+
+			float drij = sqrt(dxij*dxij + dyij*dyij);
+
+			if(abs(drij) < Rcut[0])
+			{
+				int bin = int(abs(drij) / binW[0]);
+
+				RDF_r[bin] += 2.0;
+			}
+		}
+	}
 }
 
 void computeRDF_1D(float ***RDF_x_y, atom_style *ATOMS, System *BOX, int nRDFtypes, float Rcut[], float binW[], char option[])

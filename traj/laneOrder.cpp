@@ -23,12 +23,12 @@ int main(int argc, char*argv[])
 
 	// Trajectory params
 	float dt = 1e-4;
-	int frameStart = int(0), frameEnd = int(5e4);
+	int frameStart = int(0), frameEnd = int(1e5);
 	int frameW = int(2e4);
 
 	// System params
 	int nAtomTypes = 2;
-	float Lx = 150.0, Ly = 30.0; 
+	float Lx = 150.0, Ly = 30.0;
 	float slabW = 1.0;
 	float rho = 0.45;
 	float acut = 1.0/sqrt(rho);
@@ -42,8 +42,8 @@ int main(int argc, char*argv[])
 
 	if(argc == 1)
 	{
-		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/traj.cfg");			
-		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_5e-1/Pe30/lane_order.dat");
+		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_1e0/Pe17/long_traj.cfg");			
+		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/tau_1e0/Pe17/lane_order.dat");
 	}
 	else
 	{
