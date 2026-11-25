@@ -10,7 +10,7 @@ main: main.cpp analysis.cpp
 	$(CC) $(CFLAGS) main.cpp analysis.cpp -o ./bin/main.o
 
 msd: msd.cpp analysis.cpp
-	$(CC) $(CFLAGS) msd.cpp analysis.cpp -o ./bin/msd.o
+	$(CC) $(CFLAGS) $(OMP_FLAGS) msd.cpp analysis.cpp -o ./bin/msd.o
 
 pdf_tavg: pdf_tavg.cpp analysis.cpp
 	$(CC) $(CFLAGS) pdf_tavg.cpp analysis.cpp -o ./bin/pdf.o

@@ -9,15 +9,15 @@ int main(int argc, char *argv[])
 	sprintf(option, "single");
 
 	int num_particles = 1;
-	int frameStart = int(3820), frameEnd = int(4940);
+	int frameStart = int(5390), frameEnd = int(6370);
 	int frameW = int(50);
 	float dt = 5e-4;
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
 
-	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0_R2/short_traj.cfg");
+	sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e-1_R2/short_traj.cfg");
 	// sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/binary_collisions/tests/coords_tau_1e-3.dat");
-	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e0_R2/coords");
+	sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/tau_1e-1_R2");
 	
 	if(argc != 1)
 		num_particles = argc - 1;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 			{
 				for(int i = 0; i < num_particles; i++)
 				{
-					sprintf(TRAJ->fpathO, "%s/coords_p%d.dat", fpathO, particle_nums[i]);
+					sprintf(TRAJ->fpathO, "%s/coords_p%d_2.dat", fpathO, particle_nums[i]);
 					TRAJ -> createOutputFile("step id element x y\n");
 					fclose(TRAJ->fileO);
 				}
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 				for(int i = 0; i < num_particles; i++)
 				{
-					sprintf(TRAJ->fpathO, "%s/coords_p%d.dat", fpathO, particle_nums[i]);
+					sprintf(TRAJ->fpathO, "%s/coords_p%d_2.dat", fpathO, particle_nums[i]);
 					TRAJ->fileO = fopen(TRAJ->fpathO, "a+");
 
 					int pid = particle_nums[i] - 1;

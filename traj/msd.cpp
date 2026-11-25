@@ -5,28 +5,30 @@
 
 	Author			: Ashwin Kumar
 	Date created 	: 15.03.25
-	Last modified	: 20.02.26
+	Last modified	: 24.11.26
 */
 
 #include "analysis.h"
 
 using namespace analysis;
 
-void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **ATOMS, char group[], int delFrames[], int nSample);
+void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **ATOMS, char group[], int delFrames[], int nSample, int total_threads);
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
+	int total_threads = 1;
+
 	// ----------- System Params -----------
 	float Lx = 150.0, Ly = 30.0;
 	int nAtomTypes = 2;
 
 	// ----------- Trajectory Params -----------
-	int frameStart = int(0), frameEnd = int(2e4);
+	int frameStart = int(0), frameEnd = int(8e4);
 	float dt = 5e-4;
-	int frameW = int(100);
+	int frameW = int(1);
 
 	char group[5] = "all";
-	int nSample = int(510);
+	int nSample = int(760);
 
 	// int delFrames[nSample] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600,
 	// 						  700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000};
@@ -34,7 +36,7 @@ int main(int argc, char *argv[])
 	int delFrames[nSample];
 	for(int i = 0; i < 199; i++) delFrames[i] = int(1 + 1*i);
 	for(int i = 0; i < 180; i++) delFrames[i + 199] = int(200 + 10*i);
-	for(int i = 0; i <= 130; i++) delFrames[i + 379] = int(2000 + 100*i);
+	for(int i = 0; i <= 380; i++) delFrames[i + 379] = int(2000 + 100*i);
 	// for(int i = 0; i <=5; i++) delFrames[i + 460] = int(15000 + 5000*i);
 
 	// for(int i = 0; i < nSample; i++) printf("\ndelFrame = %d", delFrames[i]);
@@ -43,10 +45,14 @@ int main(int argc, char *argv[])
 
 	Trajectory *TRAJ = new Trajectory(dt, frameW, "cfg");
 
-	if(argc == 1)
+	if(argc <= 2)
 	{
-		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/vacf/tau_1e-2/R3/long_traj.cfg");
-		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/vacf/tau_1e-2/R3/msd_long.dat");	
+		sprintf(TRAJ->fpathI, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/vacf/tau_1e-2/R5/short_traj.cfg");
+		sprintf(TRAJ->fpathO, "//media/ashwin/ASH_DRIVE_3/ashwin_md/jamming/Fd100/vacf/tau_1e-2/R5/msd.dat");	
+	}
+	if(argc == 2)
+	{
+		sscanf(argv[1], "%d", &total_threads);
 	}
 	else
 	{
@@ -63,6 +69,8 @@ int main(int argc, char *argv[])
 
 		sscanf(argv[5], "%d", &temp);
 		TRAJ->frameWidth = temp;
+
+		sscanf(argv[6], "%d", &total_threads);
 	}
 
 	TRAJ -> openTrajectory();
@@ -81,8 +89,8 @@ int main(int argc, char *argv[])
 		for(int i = 0; i < TRAJ->totalFrames; i++) 
 			ATOMS[i] = new atom_style [TRAJ->nAtoms];
 
-		TRAJ -> loadTrajectory(ATOMS, BOX, frameStart, frameEnd, true); 
-		computeMeanSquaredDisplacement(TRAJ, BOX, ATOMS, group, delFrames, nSample);
+		TRAJ -> loadTrajectory(ATOMS, BOX, frameStart, frameEnd, true);
+		computeMeanSquaredDisplacement(TRAJ, BOX, ATOMS, group, delFrames, nSample, total_threads);
 
 		delete[] ATOMS;
 	}
@@ -92,7 +100,7 @@ int main(int argc, char *argv[])
 	return(0);
 }
 
-void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **ATOMS, char group[], int delFrames[], int nSample)
+void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **ATOMS, char group[], int delFrames[], int nSample, int total_threads)
 {
 	double **MSD = new double*[4];
 	long *count = new long[nSample];
@@ -125,49 +133,49 @@ void computeMeanSquaredDisplacement(Trajectory *TRAJ, System *BOX, atom_style **
 	{
 		printf("\nComputing MSD for frame %d...", currFrame);
 
-		int ctr = 0;
-
-		while(ctr < nSample)
+		#pragma omp parallel num_threads(total_threads)
 		{
-			int nextFrame = currFrame + delFrames[ctr];
-			
-			if(nextFrame < TRAJ->totalFrames)
+			#pragma omp for
+			for(int ctr = 0; ctr < nSample; ctr++)
 			{
-				for(int j = 0; j < loopMax; j++)
+				int nextFrame = currFrame + delFrames[ctr];
+			
+				if(nextFrame < TRAJ->totalFrames)
 				{
-					int k = j;
-					if(group_id != 0)
-						k = group_lists[group_id][j] - 1;
-
-					double dx = ATOMS[nextFrame][k].rxt1 - ATOMS[currFrame][k].rxt1 + BOX->Lx*(ATOMS[nextFrame][k].jumpx - ATOMS[currFrame][k].jumpx);
-					double dy = ATOMS[nextFrame][k].ryt1 - ATOMS[currFrame][k].ryt1 + BOX->Ly*(ATOMS[nextFrame][k].jumpy - ATOMS[currFrame][k].jumpy);
-					double dz = 0.0;
-					if(TRAJ->dimension == 3)
-						dz = ATOMS[nextFrame][k].rzt1 - ATOMS[currFrame][k].rzt1 + BOX->Lz*(ATOMS[nextFrame][k].jumpz - ATOMS[currFrame][k].jumpz);
-					double dx2 = dx*dx;
-					double dy2 = dy*dy;
-					double dxdy = abs(dx)*abs(dy);
-
-					if(TRAJ->dimension == 2)
+					for(int j = 0; j < loopMax; j++)
 					{
-						MSD[0][ctr] += (dx2 + dy2);
-					}
+						int k = j;
+						if(group_id != 0)
+							k = group_lists[group_id][j] - 1;
 
-					else if(TRAJ->dimension == 3)
-					{
-						double dz2 = dz*dz;
-						MSD[0][ctr] += (dx2 + dy2 + dz2);
-					}
+						double dx = ATOMS[nextFrame][k].rxt1 - ATOMS[currFrame][k].rxt1 + BOX->Lx*(ATOMS[nextFrame][k].jumpx - ATOMS[currFrame][k].jumpx);
+						double dy = ATOMS[nextFrame][k].ryt1 - ATOMS[currFrame][k].ryt1 + BOX->Ly*(ATOMS[nextFrame][k].jumpy - ATOMS[currFrame][k].jumpy);
+						double dz = 0.0;
+						if(TRAJ->dimension == 3)
+							dz = ATOMS[nextFrame][k].rzt1 - ATOMS[currFrame][k].rzt1 + BOX->Lz*(ATOMS[nextFrame][k].jumpz - ATOMS[currFrame][k].jumpz);
+						double dx2 = dx*dx;
+						double dy2 = dy*dy;
+						double dxdy = abs(dx)*abs(dy);
 
-					MSD[1][ctr] += dx2;
-					MSD[2][ctr] += dy2;
-					MSD[3][ctr] += dxdy;
-					
-					count[ctr] += 1;
+						if(TRAJ->dimension == 2)
+						{
+							MSD[0][ctr] += (dx2 + dy2);
+						}
+
+						else if(TRAJ->dimension == 3)
+						{
+							double dz2 = dz*dz;
+							MSD[0][ctr] += (dx2 + dy2 + dz2);
+						}
+
+						MSD[1][ctr] += dx2;
+						MSD[2][ctr] += dy2;
+						MSD[3][ctr] += dxdy;
+						
+						count[ctr] += 1;
+					}	
 				}
 			}
-
-			ctr++;
 		}
 	}
 
