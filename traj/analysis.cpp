@@ -15,7 +15,7 @@ using namespace analysis;
 
 analysis::atomsXYZ::atomsXYZ()
 {
-	rxt1 = ryt1 = rxt2 = ryt2 = 0.0;
+	rxt1 = ryt1 = 0.0;
 	vx = vy = vz = vxth = vyth = vzth = 0.0;
 	fx = fy = fx_int = fy_int = 0.0;
 	si = 1;
@@ -317,25 +317,35 @@ void analysis::Trajectory::openTrajectory(bool count)
 
 			fgets(pipeString, 500, fileI);
 
-			if(strcmp(pipeString, "ITEM: ATOMS id element x y ix iy\n") == 0)
+			if(strcmp(pipeString, "ITEM: ATOMS id element x y\n") == 0)
+			{
+				sprintf(line_fmt, "%%%s %%%s %%%s %%%s\n", "d", "c", "f", "f");
+				line_fmt_mode = 1;
+			}
+			else if(strcmp(pipeString, "ITEM: ATOMS id element x y ix iy\n") == 0)
 			{
 				sprintf(line_fmt, "%%%s %%%s %%%s %%%s %%%s %%%s\n", "d", "c", "f", "f", "d", "d");
-				line_fmt_mode = 1;
+				line_fmt_mode = 2;
 			}
 			else if(strcmp(pipeString, "ITEM: ATOMS id element x y vx vy ix iy\n") == 0)
 			{
 				sprintf(line_fmt, "%%%s %%%s %%%s %%%s %%%s %%%s %%%s %%%s\n", "d", "c", "f", "f", "f", "f", "d", "d");
-				line_fmt_mode = 2;
+				line_fmt_mode = 3;
 			}
 			else if(strcmp(pipeString, "ITEM: ATOMS id element x y vx vy fx fy ix iy\n") == 0)
 			{
 				sprintf(line_fmt, "%%%s %%%s %%%s %%%s %%%s %%%s %%%s %%%s %%%s %%%s\n", "d", "c", "f", "f", "f", "f", "f", "f", "d", "d");
-				line_fmt_mode = 3;
+				line_fmt_mode = 4;
+			}
+			else if(strcmp(pipeString, "ITEM: ATOMS id element vx vy\n") == 0)
+			{
+				sprintf(line_fmt, "%%%s %%%s %%%s %%%s\n", "d", "c", "f", "f");
+				line_fmt_mode = 5;
 			}
 			else if(strcmp(pipeString, "ITEM: ATOMS id mol element x y z ix iy iz\n") == 0)
 			{
 				sprintf(line_fmt, "%%%s %%%s %%%s %%%s %%%s %%%s %%%s %%%s %%%s\n", "d", "d", "c", "f", "f", "f", "d", "d", "d");
-				line_fmt_mode = 4;
+				line_fmt_mode = 6;
 
 				int mol_nr;
 				for(int i = 0; i < nAtoms; i++)
@@ -345,21 +355,6 @@ void analysis::Trajectory::openTrajectory(bool count)
 
 					if(mol_nr > nMols) nMols = mol_nr;
 				}
-			}
-			else if(strcmp(pipeString, "ITEM: ATOMS id element vx vy vz\n") == 0)
-			{
-				sprintf(line_fmt, "%%%s %%%s %%%s %%%s %%%s\n", "d", "c", "f", "f", "f");
-				line_fmt_mode = 5;
-			}
-			else if(strcmp(pipeString, "ITEM: ATOMS id element x y\n") == 0)
-			{
-				sprintf(line_fmt, "%%%s %%%s %%%s %%%s\n", "d", "c", "f", "f");
-				line_fmt_mode = 6;
-			}
-			else if(strcmp(pipeString, "ITEM: ATOMS id element vx vy\n") == 0)
-			{
-				sprintf(line_fmt, "%%%s %%%s %%%s %%%s\n", "d", "c", "f", "f");
-				line_fmt_mode = 7;
 			}
 			else
 			{
@@ -556,25 +551,22 @@ void analysis::Trajectory::readThisFrame(atom_style *ATOMS)
 			pid -= 1;
 
 			if(line_fmt_mode == 1)
-				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy);
-
-			else if(line_fmt_mode == 2)
-				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].vx, &ATOMS[pid].vy, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy);
-
-			else if(line_fmt_mode == 3)
-				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].vx, &ATOMS[pid].vy, &ATOMS[pid].fx, &ATOMS[pid].fy, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy);
-
-			else if(line_fmt_mode == 4)
-				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].mol_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].rzt1, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy, &ATOMS[pid].jumpz);
-
-			else if(line_fmt_mode == 5)
-				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].vx, &ATOMS[pid].vy, &ATOMS[pid].vz);
-
-			else if(line_fmt_mode == 6)
 				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1);
 
-			else if(line_fmt_mode == 7)
+			if(line_fmt_mode == 2)
+				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy);
+
+			else if(line_fmt_mode == 3)
+				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].vx, &ATOMS[pid].vy, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy);
+
+			else if(line_fmt_mode == 4)
+				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].vx, &ATOMS[pid].vy, &ATOMS[pid].fx, &ATOMS[pid].fy, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy);
+
+			else if(line_fmt_mode == 5)
 				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].element, &ATOMS[pid].vx, &ATOMS[pid].vy);
+
+			else if(line_fmt_mode == 6)
+				sscanf(pipeString, line_fmt, &ATOMS[pid].atom_id, &ATOMS[pid].mol_id, &ATOMS[pid].element, &ATOMS[pid].rxt1, &ATOMS[pid].ryt1, &ATOMS[pid].rzt1, &ATOMS[pid].jumpx, &ATOMS[pid].jumpy, &ATOMS[pid].jumpz);
 
 			if(ATOMS[pid].element == 'O')
 			{

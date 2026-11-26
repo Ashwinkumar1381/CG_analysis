@@ -21,7 +21,6 @@ namespace analysis {
 	char element;
 	int atom_id, type, si;
 	float rxt1, ryt1;
-	float rxt2, ryt2;		// *) Used in MSD calculations
 	float vx, vy, vz;
 	float vxth, vyth, vzth;
 	float fx, fy;

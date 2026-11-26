@@ -23,12 +23,12 @@ int main(int argc, char* argv[])
 	int nAtomTypes = 2;
 
 	// ----------- Trajectory Params -----------
-	int frameStart = int(0), frameEnd = int(8e4);
+	int frameStart = int(0), frameEnd = int(15e4);
 	float dt = 5e-4;
-	int frameW = int(1);
+	int frameW = int(2);
 
 	char group[5] = "all";
-	int nSample = int(760);
+	int nSample = int(1110);
 
 	// int delFrames[nSample] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600,
 	// 						  700, 800, 900, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000};
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 	int delFrames[nSample];
 	for(int i = 0; i < 199; i++) delFrames[i] = int(1 + 1*i);
 	for(int i = 0; i < 180; i++) delFrames[i + 199] = int(200 + 10*i);
-	for(int i = 0; i <= 380; i++) delFrames[i + 379] = int(2000 + 100*i);
+	for(int i = 0; i <= 730; i++) delFrames[i + 379] = int(2000 + 100*i);
 	// for(int i = 0; i <=5; i++) delFrames[i + 460] = int(15000 + 5000*i);
 
 	// for(int i = 0; i < nSample; i++) printf("\ndelFrame = %d", delFrames[i]);
